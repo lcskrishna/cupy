@@ -165,6 +165,7 @@ def get_features(ctx: Context) -> Dict[str, Feature]:
             'hipfft.h',
             'roctx.h',
             'rocsolver.h',
+            'hipsolver/hipsolver.h',
         ],
         'libraries': [
             'amdhip64',  # was hiprtc and hip_hcc before ROCm 3.8.0
@@ -177,6 +178,7 @@ def get_features(ctx: Context) -> Dict[str, Feature]:
             'rocblas',
             'rocsolver',
             'rocsparse',
+            'hipsolver',
         ],
         'check_method': build.check_hip_version,
         'version_method': build.get_hip_version,
