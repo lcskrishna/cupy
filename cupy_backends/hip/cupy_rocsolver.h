@@ -1,5 +1,5 @@
 #ifndef INCLUDE_GUARD_HIP_CUPY_ROCSOLVER_H
-#define INCLUDE_GUARD_HIP_CUPY_ROCSOLVER_H
+#define INCLUDE_GUARD_HIP_CUPY_ROCScublasOperation_t opOLVER_H
 
 #include "cupy_hip.h"
 #include "cupy_hipblas.h"
@@ -36,7 +36,23 @@ static rocblas_svect convert_rocblas_svect(signed char mode) {
 }
 #endif
 
+#if HIP_VERSION >= 540
+static hipsolverFillMode_t convert_to_hipsolverFill(cublasFillMode_t mode) {
+    switch(static_cast<int>(mode)) {
+        case 0 /* CUBLAS_FILL_MODE_LOWER */: return HIPSOLVER_FILL_MODE_LOWER;
+        case 1 /* CUBLAS_FILL_MODE_UPPER */: return HIPSOLVER_FILL_MODE_UPPER;
+        default: throw std::runtime_error("unrecognized mode");
+    }
+}
 
+static hipsolverOperation_t convert_hipsolver_operation(cublasOperation_t op) {
+    return static_cast<hipsolverOperation_t>(static_cast<int>(op) + 111);
+}
+
+static hipsolverSideMode_t convert_hipsolver_side(cublasSideMode_t mode) {
+    return static_cast<hipsolverSideMode_t>(static_cast<int>(mode) + 141);
+}
+#endif
 // rocSOLVER
 /* ---------- helpers ---------- */
 
@@ -129,7 +145,7 @@ cusolverStatus_t cusolverDnDpotrf_bufferSize(cusolverDnHandle_t handle,
                                              int lda,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverDpotrf_bufferSize(handle, convert_to_hipsolverFill(uplo), n, A, lada, Lwork);
+    return hipsolverDpotrf_bufferSize(handle, convert_to_hipsolverFill(uplo), n, A, lda, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -292,7 +308,7 @@ cusolverStatus_t cusolverDnCpotrfBatched(cusolverDnHandle_t handle,
                                     infoArray, batchSize);
     #else
     return hipsolverCpotrfBatched(handle, convert_to_hipsolverFill(uplo), n,
-                                    reinterpret_cast<hipFloatComplex*>(Aarray), lda, nullptr, 0,
+                                    reinterpret_cast<hipFloatComplex**>(Aarray), lda, nullptr, 0,
                                     infoArray, batchSize);
     #endif
 }
@@ -312,7 +328,7 @@ cusolverStatus_t cusolverDnZpotrfBatched(cusolverDnHandle_t handle,
                                     infoArray, batchSize);
     #else
     return hipsolverZpotrfBatched(handle, convert_to_hipsolverFill(uplo), n,
-                                    reinterpret_cast<hipDoubleComplex*>(Aarray), lda, nullptr, 0,
+                                    reinterpret_cast<hipDoubleComplex**>(Aarray), lda, nullptr, 0,
                                     infoArray, batchSize);
     #endif
 }
@@ -356,7 +372,7 @@ cusolverStatus_t cusolverDnCgetrf_bufferSize(cusolverDnHandle_t handle,
                                              int lda,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverCgetrf_bufferSIze(handle, m, n, A, lda, Lwork);
+    return hipsolverCgetrf_bufferSize(handle, m, n, reinterpret_cast<hipFloatComplex*>(A), lda, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -371,7 +387,7 @@ cusolverStatus_t cusolverDnZgetrf_bufferSize(cusolverDnHandle_t handle,
                                              int lda,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverZgetrf_bufferSIze(handle, m, n, A, lda, Lwork);
+    return hipsolverZgetrf_bufferSize(handle, m, n, reinterpret_cast<hipDoubleComplex*>(A), lda, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -388,7 +404,7 @@ cusolverStatus_t cusolverDnSgetrf(cusolverDnHandle_t handle,
                                   int *devIpiv,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
-    return hipsolverSgetrf(handle, m, n, A, lda, Workspace, devIpiv, devInfo);
+    return hipsolverSgetrf(handle, m, n, A, lda, Workspace, 0, devIpiv, devInfo);
   #else
     // ignore Workspace as rocSOLVER does not need it
     return rocsolver_sgetrf(handle, m, n, A, lda, devIpiv, devInfo);
@@ -404,7 +420,7 @@ cusolverStatus_t cusolverDnDgetrf(cusolverDnHandle_t handle,
                                   int *devIpiv,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
-    return hipsolverDgetrf(handle, m, n, A, lda, Workspace, devIpiv, devInfo);
+    return hipsolverDgetrf(handle, m, n, A, lda, Workspace, 0, devIpiv, devInfo);
   #else
     // ignore Workspace as rocSOLVER does not need it
     return rocsolver_dgetrf(handle, m, n, A, lda, devIpiv, devInfo);
@@ -421,7 +437,7 @@ cusolverStatus_t cusolverDnCgetrf(cusolverDnHandle_t handle,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
     return hipsolverCgetrf(handle, m, n, reinterpret_cast<hipFloatComplex*>(A), lda,
-                        reinterpret_cast<hipFloatComplex*>(Workspace), devIpiv, devInfo);
+                        reinterpret_cast<hipFloatComplex*>(Workspace), 0, devIpiv, devInfo);
   #else
     // ignore Workspace as rocSOLVER does not need it
     return rocsolver_cgetrf(handle, m, n,
@@ -440,7 +456,7 @@ cusolverStatus_t cusolverDnZgetrf(cusolverDnHandle_t handle,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
     return hipsolverZgetrf(handle, m, n, reinterpret_cast<hipDoubleComplex*>(A), lda,
-                        reinterpret_cast<hipDoubleComplex*>(Workspace), devIpiv, devInfo);
+                        reinterpret_cast<hipDoubleComplex*>(Workspace), 0, devIpiv, devInfo);
   #else
     // ignore Workspace as rocSOLVER does not need it
     return rocsolver_zgetrf(handle, m, n,
@@ -770,7 +786,7 @@ cusolverStatus_t cusolverDnCungqr_bufferSize(cusolverDnHandle_t handle,
   #if HIP_VERSION >= 540
     return hipsolverDnCungqr_bufferSize(handle, m, n, k,
                                         reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)),
-                                        lda, const_cast<hipFloatComplex*>(tau), lwork);
+                                        lda, reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(tau)), lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *lwork = 0;
@@ -787,8 +803,8 @@ cusolverStatus_t cusolverDnZungqr_bufferSize(cusolverDnHandle_t handle,
                                              const cuDoubleComplex *tau,
                                              int *lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverZungqr_bufferSize(handle, m, n, k, const_cast<hipDoubleComplex*>(A),
-                                        lda, const_cast<hipDoubleComplex*>(tau), lwork);
+    return hipsolverZungqr_bufferSize(handle, m, n, k, reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)),
+                                        lda, reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(tau)), lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *lwork = 0;
@@ -1724,8 +1740,9 @@ cusolverStatus_t cusolverDnZgebrd(cusolverDnHandle_t handle,
 typedef void* syevjInfo_t;
 #else
 typedef hipsolverSyevjInfo_t syevjInfo_t;
+#endif
 
-#if HIP_VERSION >= 402 && HIP_VERSION < 540
+#if HIP_VERSION >= 402
 static rocblas_evect convert_rocblas_evect(cusolverEigMode_t mode) {
     switch(mode) {
         // as of ROCm 4.2.0 rocblas_evect_tridiagonal is not supported
