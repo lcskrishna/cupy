@@ -420,7 +420,7 @@ cusolverStatus_t cusolverDnCgetrf(cusolverDnHandle_t handle,
                                   int *devIpiv,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
-    return hipsolverCgetrf(handle, m, n, reinterpret_cast<hipFloatComplex*>(A), lda, 
+    return hipsolverCgetrf(handle, m, n, reinterpret_cast<hipFloatComplex*>(A), lda,
                         reinterpret_cast<hipFloatComplex*>(Workspace), devIpiv, devInfo);
   #else
     // ignore Workspace as rocSOLVER does not need it
@@ -463,7 +463,7 @@ cusolverStatus_t cusolverDnSgetrs(cusolverDnHandle_t handle,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
     return hipsolverSgetrs(handle, convert_hipsolver_operation(trans),
-                            n, nrhs, const_cast<float*>(A), lda, 
+                            n, nrhs, const_cast<float*>(A), lda,
                             const_cast<int*>(devIpiv), B, ldb, nullptr, 0, devInfo);
   #else
     // ignore devInfo as rocSOLVER does not need it
@@ -507,8 +507,9 @@ cusolverStatus_t cusolverDnCgetrs(cusolverDnHandle_t handle,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
     return hipsolverCgetrs(handle, convert_hipsolver_operation(trans),
-                            n, nrhs, const_cast<hipFloatComplex*>(A), lda,
-                            const_cast<int*>(devIpiv), reinterpret_cast<hipFloatComplex*>(B), ldb, nullptr, 0, devInfo);
+                            n, nrhs, reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)),
+                            lda, const_cast<int*>(devIpiv),
+                            reinterpret_cast<hipFloatComplex*>(B), ldb, nullptr, 0, devInfo);
   #else
     // ignore devInfo as rocSOLVER does not need it
     return rocsolver_cgetrs(handle,
@@ -532,8 +533,9 @@ cusolverStatus_t cusolverDnZgetrs(cusolverDnHandle_t handle,
                                   int *devInfo) {
   #if HIP_VERSION >= 540
     return hipsolverZgetrs(handle, convert_hipsolver_operation(trans),
-                            n, nrhs, const_cast<hipDoubleComplex*>(A), lda,
-                            const_cast<int*>(devIpiv), reinterpret_cast<hipDoubleComplex*>(B), ldb, nullptr, 0, devInfo);
+                            n, nrhs, reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)),
+                            lda, const_cast<int*>(devIpiv),
+                            reinterpret_cast<hipDoubleComplex*>(B), ldb, nullptr, 0, devInfo);
   #else
     // ignore devInfo as rocSOLVER does not need it
     return rocsolver_zgetrs(handle,
@@ -766,7 +768,8 @@ cusolverStatus_t cusolverDnCungqr_bufferSize(cusolverDnHandle_t handle,
                                              const cuComplex *tau,
                                              int *lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverDnCungqr_bufferSize(handle, m, n, k, const_cast<hipFloatComplex*>(A),
+    return hipsolverDnCungqr_bufferSize(handle, m, n, k,
+                                        reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)),
                                         lda, const_cast<hipFloatComplex*>(tau), lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
@@ -813,7 +816,7 @@ cusolverStatus_t cusolverDnCungqr(cusolverDnHandle_t handle,
     #else
     return hipsolverCungqr(handle, m, n, k,
                             reinterpret_cast<hipFloatComplex*>(A), lda,
-                            reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(tau)), 
+                            reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(tau)),
                             reinterpret_cast<hipFloatComplex*>(work), lwork, info);
     #endif
 }
@@ -1072,7 +1075,7 @@ cusolverStatus_t cusolverDnSgesvd_bufferSize(cusolverDnHandle_t handle,
                                              int n,
                                              int *lwork) {
   #if HIP_VERSION >= 540
-    return hipsolverSgesvd_bufferSize(handle, 'N', 'N', m, n, lwork); 
+    return hipsolverSgesvd_bufferSize(handle, 'N', 'N', m, n, lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *lwork = 0;
@@ -1276,15 +1279,15 @@ cusolverStatus_t cusolverDnDestroyGesvdjInfo(...) {
 cusolverStatus_t cusolverDnSgesvdjBatched_bufferSize(
         cusolverDnHandle_t handle,
         cusolverEigMode_t jobz,
-        int m,                
-        int n,                
-        const float *A,    
-        int lda,           
-        const float *S, 
-        const float *U,   
-        int ldu, 
+        int m,
+        int n,
+        const float *A,
+        int lda,
+        const float *S,
+        const float *U,
+        int ldu,
         const float *V,
-        int ldv,  
+        int ldv,
         int *lwork,
         gesvdjInfo_t params,
         int batchSize) {
@@ -1304,7 +1307,7 @@ cusolverStatus_t cusolverDnDgesvdjBatched_bufferSize(
         cusolverEigMode_t jobz,
         int m,
         int n,
-        const double *A, 
+        const double *A,
         int lda,
         const double *S,
         const double *U,
@@ -1340,47 +1343,55 @@ cusolverStatus_t cusolverDnCgesvdjBatched_bufferSize(
         int *lwork,
         gesvdjInfo_t params,
         int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * (m<n?m:n);  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgesvdjBatched_bufferSize(
         cusolverDnHandle_t handle,
-        cusolverEigMode_t jobz, 
-        int m, 
-        int n, 
+        cusolverEigMode_t jobz,
+        int m,
+        int n,
         const cuDoubleComplex *A,
         int lda,
         const double *S,
         const cuDoubleComplex *U,
-        int ldu, 
+        int ldu,
         const cuDoubleComplex *V,
         int ldv,
         int *lwork,
         gesvdjInfo_t params,
         int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * (m<n?m:n);  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSgesvdjBatched(
         cusolverDnHandle_t handle,
-        cusolverEigMode_t jobz, 
-        int m, 
-        int n, 
-        float *A, 
-        int lda, 
-        float *S, 
+        cusolverEigMode_t jobz,
+        int m,
+        int n,
+        float *A,
+        int lda,
+        float *S,
         float *U,
         int ldu,
         float *V,
-        int ldv, 
+        int ldv,
         float *work,
         int lwork,
         int *info,
@@ -1388,7 +1399,7 @@ cusolverStatus_t cusolverDnSgesvdjBatched(
         int batchSize) {
     #if HIP_VERSION < 309
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     rocblas_svect leftv, rightv;
     rocblas_stride stU, stV;
     if (jobz == CUSOLVER_EIG_MODE_NOVECTOR) {
@@ -1412,6 +1423,8 @@ cusolverStatus_t cusolverDnSgesvdjBatched(
                                     work, (m<n?m:n)-1,
                                     rocblas_outofplace, // always out-of-place
                                     info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1431,10 +1444,10 @@ cusolverStatus_t cusolverDnDgesvdjBatched(
         int lwork,
         int *info,
         gesvdjInfo_t params,
-        int batchSize) { 
+        int batchSize) {
     #if HIP_VERSION < 309
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     rocblas_svect leftv, rightv;
     rocblas_stride stU, stV;
     if (jobz == CUSOLVER_EIG_MODE_NOVECTOR) {
@@ -1458,6 +1471,8 @@ cusolverStatus_t cusolverDnDgesvdjBatched(
                                     work, (m<n?m:n)-1,
                                     rocblas_outofplace, // always out-of-place
                                     info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1480,7 +1495,7 @@ cusolverStatus_t cusolverDnCgesvdjBatched(
         int batchSize) {
     #if HIP_VERSION < 309
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     rocblas_svect leftv, rightv;
     rocblas_stride stU, stV;
     if (jobz == CUSOLVER_EIG_MODE_NOVECTOR) {
@@ -1504,6 +1519,8 @@ cusolverStatus_t cusolverDnCgesvdjBatched(
                                     reinterpret_cast<float*>(work), (m<n?m:n)-1,
                                     rocblas_outofplace, // always out-of-place
                                     info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1526,7 +1543,7 @@ cusolverStatus_t cusolverDnZgesvdjBatched(
         int batchSize) {
     #if HIP_VERSION < 309
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     rocblas_svect leftv, rightv;
     rocblas_stride stU, stV;
     if (jobz == CUSOLVER_EIG_MODE_NOVECTOR) {
@@ -1550,6 +1567,8 @@ cusolverStatus_t cusolverDnZgesvdjBatched(
                                     reinterpret_cast<double*>(work), (m<n?m:n)-1,
                                     rocblas_outofplace, // always out-of-place
                                     info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1559,36 +1578,52 @@ cusolverStatus_t cusolverDnSgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int m,
                                              int n,
                                              int *Lwork) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int m,
                                              int n,
                                              int *Lwork) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int m,
                                              int n,
                                              int *Lwork) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int m,
                                              int n,
                                              int *Lwork) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSgebrd(cusolverDnHandle_t handle,
@@ -1605,9 +1640,11 @@ cusolverStatus_t cusolverDnSgebrd(cusolverDnHandle_t handle,
                                   int *devInfo) {
     #if HIP_VERSION < 306
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_sgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1625,9 +1662,11 @@ cusolverStatus_t cusolverDnDgebrd(cusolverDnHandle_t handle,
                                   int *devInfo) {
     #if HIP_VERSION < 306
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_dgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1645,11 +1684,13 @@ cusolverStatus_t cusolverDnCgebrd(cusolverDnHandle_t handle,
                                   int *devInfo) {
     #if HIP_VERSION < 306
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_cgebrd(handle, m, n, reinterpret_cast<rocblas_float_complex*>(A),
                             lda, D, E, reinterpret_cast<rocblas_float_complex*>(TAUQ),
                             reinterpret_cast<rocblas_float_complex*>(TAUP));
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1667,19 +1708,24 @@ cusolverStatus_t cusolverDnZgebrd(cusolverDnHandle_t handle,
                                   int *devInfo) {
     #if HIP_VERSION < 306
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_zgebrd(handle, m, n, reinterpret_cast<rocblas_double_complex*>(A),
                             lda, D, E, reinterpret_cast<rocblas_double_complex*>(TAUQ),
                             reinterpret_cast<rocblas_double_complex*>(TAUP));
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
 
 /* ---------- syevj ---------- */
+#if HIP_VERSION < 540
 typedef void* syevjInfo_t;
+#else
+typedef hipsolverSyevjInfo_t syevjInfo_t;
 
-#if HIP_VERSION >= 402
+#if HIP_VERSION >= 402 && HIP_VERSION < 540
 static rocblas_evect convert_rocblas_evect(cusolverEigMode_t mode) {
     switch(mode) {
         // as of ROCm 4.2.0 rocblas_evect_tridiagonal is not supported
@@ -1691,12 +1737,20 @@ static rocblas_evect convert_rocblas_evect(cusolverEigMode_t mode) {
 #endif
 
 cusolverStatus_t cusolverDnCreateSyevjInfo(syevjInfo_t *info) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // TODO(leofang): set info to NULL? We don't use it anyway...
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDestroySyevjInfo(syevjInfo_t info) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsyevj_bufferSize(cusolverDnHandle_t handle,
@@ -1708,11 +1762,15 @@ cusolverStatus_t cusolverDnSsyevj_bufferSize(cusolverDnHandle_t handle,
                                              const float *W,
                                              int *lwork,
                                              syevjInfo_t params) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsyevj_bufferSize(cusolverDnHandle_t handle,
@@ -1724,11 +1782,15 @@ cusolverStatus_t cusolverDnDsyevj_bufferSize(cusolverDnHandle_t handle,
                                              const double *W,
                                              int *lwork,
                                              syevjInfo_t params) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCheevj_bufferSize(cusolverDnHandle_t handle,
@@ -1740,11 +1802,15 @@ cusolverStatus_t cusolverDnCheevj_bufferSize(cusolverDnHandle_t handle,
                                              const float *W,
                                              int *lwork,
                                              syevjInfo_t params) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZheevj_bufferSize(cusolverDnHandle_t handle,
@@ -1756,11 +1822,15 @@ cusolverStatus_t cusolverDnZheevj_bufferSize(cusolverDnHandle_t handle,
                                              const double *W,
                                              int *lwork,
                                              syevjInfo_t params) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsyevj(cusolverDnHandle_t handle,
@@ -1776,13 +1846,15 @@ cusolverStatus_t cusolverDnSsyevj(cusolverDnHandle_t handle,
                                   syevjInfo_t params) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_ssyev(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                            n, A, lda, W,
                            // since we can't pass in another array through the API, and work is unused,
                            // we use it to store the temporary E array, to be discarded after calculation
                            work,
                            info);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1799,13 +1871,15 @@ cusolverStatus_t cusolverDnDsyevj(cusolverDnHandle_t handle,
                                   syevjInfo_t params) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_dsyev(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                            n, A, lda, W,
                            // since we can't pass in another array through the API, and work is unused,
                            // we use it to store the temporary E array, to be discarded after calculation
                            work,
                            info);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1822,13 +1896,15 @@ cusolverStatus_t cusolverDnCheevj(cusolverDnHandle_t handle,
                                   syevjInfo_t params) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_cheev(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                            n, reinterpret_cast<rocblas_float_complex*>(A), lda, W,
                            // since we can't pass in another array through the API, and work is unused,
                            // we use it to store the temporary E array, to be discarded after calculation
                            reinterpret_cast<float*>(work),
                            info);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1845,13 +1921,15 @@ cusolverStatus_t cusolverDnZheevj(cusolverDnHandle_t handle,
                                   syevjInfo_t params) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_zheev(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                            n, reinterpret_cast<rocblas_double_complex*>(A), lda, W,
                            // since we can't pass in another array through the API, and work is unused,
                            // we use it to store the temporary E array, to be discarded after calculation
                            reinterpret_cast<double*>(work),
                            info);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1866,11 +1944,15 @@ cusolverStatus_t cusolverDnSsyevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     int *lwork,
                                                     syevjInfo_t params,
                                                     int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsyevjBatched_bufferSize(cusolverDnHandle_t handle,
@@ -1883,11 +1965,15 @@ cusolverStatus_t cusolverDnDsyevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     int *lwork,
                                                     syevjInfo_t params,
                                                     int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCheevjBatched_bufferSize(cusolverDnHandle_t handle,
@@ -1900,11 +1986,15 @@ cusolverStatus_t cusolverDnCheevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     int *lwork,
                                                     syevjInfo_t params,
                                                     int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZheevjBatched_bufferSize(cusolverDnHandle_t handle,
@@ -1917,11 +2007,15 @@ cusolverStatus_t cusolverDnZheevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     int *lwork,
                                                     syevjInfo_t params,
                                                     int batchSize) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
     // to store it
     *lwork = batchSize * n;  // note: counts, not bytes!
     return rocblas_status_success;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsyevjBatched(cusolverDnHandle_t handle,
@@ -1938,13 +2032,15 @@ cusolverStatus_t cusolverDnSsyevjBatched(cusolverDnHandle_t handle,
                                          int batchSize) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_ssyev_batched(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                                    n, reinterpret_cast<float* const*>(A), lda, W, n,
                                    // since we can't pass in another array through the API, and work is unused,
                                    // we use it to store the temporary E array, to be discarded after calculation
                                    work, n,
                                    info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1962,13 +2058,15 @@ cusolverStatus_t cusolverDnDsyevjBatched(cusolverDnHandle_t handle,
                                          int batchSize) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_dsyev_batched(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                                    n, reinterpret_cast<double* const*>(A), lda, W, n,
                                    // since we can't pass in another array through the API, and work is unused,
                                    // we use it to store the temporary E array, to be discarded after calculation
                                    work, n,
                                    info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -1986,13 +2084,15 @@ cusolverStatus_t cusolverDnCheevjBatched(cusolverDnHandle_t handle,
                                          int batchSize) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_cheev_batched(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                                    n, reinterpret_cast<rocblas_float_complex* const*>(A), lda, W, n,
                                    // since we can't pass in another array through the API, and work is unused,
                                    // we use it to store the temporary E array, to be discarded after calculation
                                    reinterpret_cast<float*>(work), n,
                                    info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -2010,13 +2110,15 @@ cusolverStatus_t cusolverDnZheevjBatched(cusolverDnHandle_t handle,
                                          int batchSize) {
     #if HIP_VERSION < 402
     return rocblas_status_not_implemented;
-    #else
+    #elif HIP_VERSION < 540
     return rocsolver_zheev_batched(handle, convert_rocblas_evect(jobz), convert_rocblas_fill(uplo),
                                    n, reinterpret_cast<rocblas_double_complex* const*>(A), lda, W, n,
                                    // since we can't pass in another array through the API, and work is unused,
                                    // we use it to store the temporary E array, to be discarded after calculation
                                    reinterpret_cast<double*>(work), n,
                                    info, batchSize);
+    #else
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
     #endif
 }
 
@@ -2028,451 +2130,948 @@ typedef void* cusolverSpHandle_t;
 typedef void* cusparseMatDescr_t;
 
 cusolverStatus_t cusolverSpGetStream(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpSetStream(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 
 /* ---------- potrs ---------- */
 cusolverStatus_t cusolverDnSpotrs(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDpotrs(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCpotrs(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZpotrs(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSpotrsBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDpotrsBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCpotrsBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZpotrsBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 
 /* ---------- sytrf ---------- */
 cusolverStatus_t cusolverDnSsytrf_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsytrf_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCsytrf_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZsytrf_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsytrf(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsytrf(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCsytrf(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZsytrf(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXgesvdjSetTolerance(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXgesvdjSetMaxSweeps(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXgesvdjSetSortEig(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXgesvdjGetResidual(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXgesvdjGetSweeps(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSgesvdj_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDgesvdj_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCgesvdj_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgesvdj_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSgesvdj(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDgesvdj(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCgesvdj(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgesvdj(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 
 cusolverStatus_t cusolverDnSgesvdaStridedBatched_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDgesvdaStridedBatched_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCgesvdaStridedBatched_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgesvdaStridedBatched_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSgesvdaStridedBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDgesvdaStridedBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCgesvdaStridedBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZgesvdaStridedBatched(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZZgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZCgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZYgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZKgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCCgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCYgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCKgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDDgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDSgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDXgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDHgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSSgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSXgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSHgels_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZZgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZCgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZYgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZKgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCCgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCYgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCKgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDDgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDSgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDXgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDHgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSSgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSXgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSHgels(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsyevd_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsyevd_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCheevd_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZheevd_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnSsyevd(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnDsyevd(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnCheevd(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZheevd(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevjSetTolerance(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevjSetMaxSweeps(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevjSetSortEig(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevjGetResidual(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevjGetSweeps(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnZZgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZCgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZYgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZKgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCCgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCYgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCKgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDDgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDSgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDXgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDHgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSSgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSXgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSHgesv_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZZgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZCgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZYgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnZKgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCCgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCYgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnCKgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDDgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDSgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDXgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnDHgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSSgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSXgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 cusolverStatus_t cusolverDnSHgesv(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverDnXsyevd_bufferSize(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
+
 cusolverStatus_t cusolverDnXsyevd(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpCreate(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpDestroy(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpScsrlsvqr(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpDcsrlsvqr(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpCcsrlsvqr(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpZcsrlsvqr(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpScsrlsvchol(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpDcsrlsvchol(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpCcsrlsvchol(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpZcsrlsvchol(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpScsreigvsi(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpDcsreigvsi(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpCcsreigvsi(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
 cusolverStatus_t cusolverSpZcsreigvsi(...) {
+  #if HIP_VERSION >= 540
+    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+  #else
     return rocblas_status_not_implemented;
+  #endif
 }
 
-} // extern "C" 
+} // extern "C"
 
 #endif // #ifdef INCLUDE_GUARD_HIP_CUPY_ROCSOLVER_H
