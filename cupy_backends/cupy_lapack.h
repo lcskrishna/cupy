@@ -133,18 +133,41 @@ int gesvd_loop(
 }
 
 
+#if HIP_VERSION >= 540
+template<typename T>
+using geqrf = cusolverStatus_t (*)(cusolverDnHandle_t, int, int, T*, int, T*, T*, int, int*);
+#else
 /*
  * batched geqrf (only used on HIP)
  */
 template<typename T>
 using geqrf = cusolverStatus_t (*)(cusolverDnHandle_t, int, int, T* const[], int, T*, long int, int);
+#endif
 
 template<typename T> struct geqrf_func { geqrf<T> ptr; };
-template<> struct geqrf_func<float> { geqrf<float> ptr = rocsolver_sgeqrf_batched; };
-template<> struct geqrf_func<double> { geqrf<double> ptr = rocsolver_dgeqrf_batched; };
+template<> struct geqrf_func<float> {
+#if HIP_VERSION >= 540
+    geqrf<float> ptr = hipsolverSgeqrf;
+#else
+    geqrf<float> ptr = rocsolver_sgeqrf_batched;
+#endif
+};
+template<> struct geqrf_func<double> {
+#if HIP_VERSION >= 540
+    geqrf<double> ptr = hipsolverDgeqrf;
+#else
+    geqrf<double> ptr = rocsolver_dgeqrf_batched;
+#endif
+};
+
+#if HIP_VERSION >= 540
+template<> struct geqrf_func<hipFloatComplex> { geqrf<hipFloatComplex> ptr = hipsolverCgeqrf; };
+template<> struct geqrf_func<hipDoubleComplex> { geqrf<hipDoubleComplex> ptr = hipsolverZgeqrf; };
+#else
 // we need the correct func pointer here, so can't cast!
 template<> struct geqrf_func<rocblas_float_complex> { geqrf<rocblas_float_complex> ptr = rocsolver_cgeqrf_batched; };
 template<> struct geqrf_func<rocblas_double_complex> { geqrf<rocblas_double_complex> ptr = rocsolver_zgeqrf_batched; };
+#endif
 
 template<typename T>
 int geqrf_loop(
@@ -160,6 +183,15 @@ int geqrf_loop(
 
     cusolverStatus_t status;
 
+#if HIP_VERSION >= 540
+    typedef typename std::conditional<
+        std::is_floating_point<T>::value,
+        T,
+        typename std::conditional<std::is_same<T, cuComplex>::value,
+                                  hipFloatComplex,
+                                  hipDoubleComplex>::type
+        >::type data_type;
+#else
     // we can't use "if constexpr" to do a compile-time branch selection as it's C++17 only,
     // so we use custom traits instead
     typedef typename std::conditional<
@@ -169,13 +201,31 @@ int geqrf_loop(
                                   rocblas_float_complex,
                                   rocblas_double_complex>::type
         >::type data_type;
+#endif
     geqrf<data_type> func = geqrf_func<data_type>().ptr;
+#if HIP_VERSION >= 540
+    data_type* A = reinterpret_cast<data_type*>(a_ptr);
+#else
     data_type* const* A = reinterpret_cast<data_type* const*>(a_ptr);
+#endif
     data_type* Tau = reinterpret_cast<data_type*>(tau_ptr);
     int k = (m<n)?m:n;
 
+#if HIP_VERSION >= 540
+    data_type* Work = reinterpret_cast<data_type*>(w_ptr);
+    int* devInfo = reinterpret_cast<int*>(info_ptr);
+    for (int i=0; i < batch_size; i++) {
+        status = func(reinterpret_cast<hipsolverDnHandle_t>(handle),
+                      m, n, A, lda, Tau, Work, buffersize, devInfo);
+        if (status != 0) break;
+        A += m * n;
+        Tau += k;
+        devInfo += 1;
+    }
+#else
     // use rocSOLVER's batched geqrf
     status = func((cusolverDnHandle_t)handle, m, n, A, lda, Tau, k, batch_size);
+#endif
 
     return status;
 }
