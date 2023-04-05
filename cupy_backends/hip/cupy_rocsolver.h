@@ -52,6 +52,7 @@ static hipsolverOperation_t convert_hipsolver_operation(cublasOperation_t op) {
 static hipsolverSideMode_t convert_hipsolver_side(cublasSideMode_t mode) {
     return static_cast<hipsolverSideMode_t>(static_cast<int>(mode) + 141);
 }
+
 #endif
 // rocSOLVER
 /* ---------- helpers ---------- */
@@ -1263,19 +1264,26 @@ cusolverStatus_t cusolverDnZgesvd(cusolverDnHandle_t handle,
 
 /* ---------- batched gesvd ---------- */
 // Because rocSOLVER provides no counterpart for gesvdjBatched, we wrap its batched version directly.
-#if HIP_VERSION < 504
 typedef enum {
     CUSOLVER_EIG_MODE_NOVECTOR=0,
     CUSOLVER_EIG_MODE_VECTOR=1
 } cusolverEigMode_t;
+
+#if HIP_VERSION < 504
 typedef void* gesvdjInfo_t;
 #else
-typedef hipsolverEigMode_t cusolverEigMode_t;
+//typedef hipsolverEigMode_t cusolverEigMode_t;
 typedef hipsolverGesvdjInfo_t gesvdjInfo_t;
+
+static hipsolverEigMode_t convert_hipsolver_eigmode(cusolverEigMode_t mode) {
+    return static_cast<hipsolverEigMode_t>(static_cast<int>(mode) + 201);
+}
+
 #endif
 
-cusolverStatus_t cusolverDnCreateGesvdjInfo(...) {
+cusolverStatus_t cusolverDnCreateGesvdjInfo(gesvdjInfo_t* info) {
   #if HIP_VERSION >= 504
+    //return hipsolverDnCreateGesvdjInfo(info);
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
   #else
     // should always success as rocSOLVER does not need it
@@ -1283,9 +1291,10 @@ cusolverStatus_t cusolverDnCreateGesvdjInfo(...) {
   #endif
 }
 
-cusolverStatus_t cusolverDnDestroyGesvdjInfo(...) {
+cusolverStatus_t cusolverDnDestroyGesvdjInfo(gesvdjInfo_t info) {
   #if HIP_VERSION >= 504
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverDestroyGesvdjInfo(info);
   #else
     // should always success as rocSOLVER does not need it
     return rocblas_status_success;
@@ -1309,6 +1318,8 @@ cusolverStatus_t cusolverDnSgesvdjBatched_bufferSize(
         int batchSize) {
   #if HIP_VERSION >= 504
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverSgesvdj_bufferSize(handle, convert_hipsolver_eigmode(jobz), m, n, A, lda, S, U, ldu, V, ldv, lwork,
+    //                                    params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
@@ -1335,6 +1346,8 @@ cusolverStatus_t cusolverDnDgesvdjBatched_bufferSize(
         int batchSize) {
   #if HIP_VERSION >= 540
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverDgesvdj_bufferSize(handle, convert_hipsolver_eigmode(jobz), m, n, A, lda, S, U, ldu, V, ldv, lwork,
+    //                                    params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
@@ -1361,6 +1374,11 @@ cusolverStatus_t cusolverDnCgesvdjBatched_bufferSize(
         int batchSize) {
   #if HIP_VERSION >= 540
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverCgesvdj_bufferSize(handle, convert_hipsolver_eigmode(jobz), m, n,
+    //                                    reinterpret_cast<const hipFloatComplex*>(A), lda, S,
+    //                                    reinterpret_cast<const hipFloatComplex*>(U), ldu,
+    //                                    reinterpret_cast<const hipFloatComplex*>(V), ldv, lwork,
+    //                                    params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
@@ -1387,6 +1405,11 @@ cusolverStatus_t cusolverDnZgesvdjBatched_bufferSize(
         int batchSize) {
   #if HIP_VERSION >= 540
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverZgesvdj_bufferSize(handle, convert_hipsolver_eigmode(jobz), m, n,
+    //                                    reinterpret_cast<const hipDoubleComplex*>(A), lda, S,
+    //                                    reinterpret_cast<const hipDoubleComplex*>(U), ldu,
+    //                                    reinterpret_cast<const hipDoubleComplex*>(V), ldv, lwork,
+    //                                    params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the bidiagonal matrix B associated with A, which we don't need, so we use this workspace
@@ -1441,6 +1464,8 @@ cusolverStatus_t cusolverDnSgesvdjBatched(
                                     info, batchSize);
     #else
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverSgesvdjBatched(handle, convert_hipsolver_eigmode(jobz), m, n, A, lda,
+    //                                S, U, ldu, V, ldv, work, lwork, info, params, batchSize);
     #endif
 }
 
@@ -1489,6 +1514,8 @@ cusolverStatus_t cusolverDnDgesvdjBatched(
                                     info, batchSize);
     #else
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverDgesvdjBatched(handle, convert_hipsolver_eigmode(jobz), m, n, A, lda,
+    //                                S, U, ldu, V, ldv, work, lwork, info, params, batchSize);
     #endif
 }
 
@@ -1537,6 +1564,9 @@ cusolverStatus_t cusolverDnCgesvdjBatched(
                                     info, batchSize);
     #else
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverCgesvdjBatched(handle, convert_hipsolver_eigmode(jobz), m, n, reinterpret_cast<hipFloatComplex*>(A), lda,
+    //                                S, reinterpret_cast<hipFloatComplex*>(U), ldu, reinterpret_cast<hipFloatComplex*>(V), ldv,
+    //                                reinterpret_cast<hipFloatComplex*>(work), lwork, info, params, batchSize);
     #endif
 }
 
@@ -1585,6 +1615,9 @@ cusolverStatus_t cusolverDnZgesvdjBatched(
                                     info, batchSize);
     #else
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    //return hipsolverZgesvdjBatched(handle, convert_hipsolver_eigmode(jobz), m, n, reinterpret_cast<hipDoubleComplex*>(A), lda,
+    //                                S, reinterpret_cast<hipDoubleComplex*>(U), ldu, reinterpret_cast<hipDoubleComplex*>(V), ldv,
+    //                                reinterpret_cast<hipDoubleComplex*>(work), lwork, info, params, batchSize);
     #endif
 }
 
@@ -1595,7 +1628,7 @@ cusolverStatus_t cusolverDnSgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int n,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSgebrd_bufferSize(handle, m, n, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -1608,7 +1641,7 @@ cusolverStatus_t cusolverDnDgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int n,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDgebrd_bufferSize(handle, m, n, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -1621,7 +1654,7 @@ cusolverStatus_t cusolverDnCgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int n,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCgebrd_bufferSize(handle, m, n, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -1634,7 +1667,7 @@ cusolverStatus_t cusolverDnZgebrd_bufferSize(cusolverDnHandle_t handle,
                                              int n,
                                              int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZgebrd_bufferSize(handle, m, n, Lwork);
   #else
     // this needs to return 0 because rocSolver does not rely on it
     *Lwork = 0;
@@ -1660,7 +1693,7 @@ cusolverStatus_t cusolverDnSgebrd(cusolverDnHandle_t handle,
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_sgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP, Work, Lwork, devInfo);
     #endif
 }
 
@@ -1682,7 +1715,7 @@ cusolverStatus_t cusolverDnDgebrd(cusolverDnHandle_t handle,
     // ignore work, lwork and devinfo as rocSOLVER does not need them
     return rocsolver_dgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDgebrd(handle, m, n, A, lda, D, E, TAUQ, TAUP, Work, Lwork, devInfo);
     #endif
 }
 
@@ -1706,7 +1739,9 @@ cusolverStatus_t cusolverDnCgebrd(cusolverDnHandle_t handle,
                             lda, D, E, reinterpret_cast<rocblas_float_complex*>(TAUQ),
                             reinterpret_cast<rocblas_float_complex*>(TAUP));
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCgebrd(handle, m, n, reinterpret_cast<hipFloatComplex*>(A),
+                            lda, D, E, reinterpret_cast<hipFloatComplex*>(TAUQ),
+                            reinterpret_cast<hipFloatComplex*>(TAUP), reinterpret_cast<hipFloatComplex*>(Work), Lwork, devInfo);
     #endif
 }
 
@@ -1730,7 +1765,9 @@ cusolverStatus_t cusolverDnZgebrd(cusolverDnHandle_t handle,
                             lda, D, E, reinterpret_cast<rocblas_double_complex*>(TAUQ),
                             reinterpret_cast<rocblas_double_complex*>(TAUP));
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZgebrd(handle, m, n, reinterpret_cast<hipDoubleComplex*>(A),
+                            lda, D, E, reinterpret_cast<hipDoubleComplex*>(TAUQ),
+                            reinterpret_cast<hipDoubleComplex*>(TAUP), reinterpret_cast<hipDoubleComplex*>(Work), Lwork, devInfo);
     #endif
 }
 
@@ -1755,7 +1792,7 @@ static rocblas_evect convert_rocblas_evect(cusolverEigMode_t mode) {
 
 cusolverStatus_t cusolverDnCreateSyevjInfo(syevjInfo_t *info) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCreateSyevjInfo(info);
   #else
     // TODO(leofang): set info to NULL? We don't use it anyway...
     return rocblas_status_success;
@@ -1764,7 +1801,7 @@ cusolverStatus_t cusolverDnCreateSyevjInfo(syevjInfo_t *info) {
 
 cusolverStatus_t cusolverDnDestroySyevjInfo(syevjInfo_t info) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDestroySyevjInfo(info);
   #else
     return rocblas_status_success;
   #endif
@@ -1780,7 +1817,9 @@ cusolverStatus_t cusolverDnSsyevj_bufferSize(cusolverDnHandle_t handle,
                                              int *lwork,
                                              syevjInfo_t params) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevj_bufferSize(handle, convert_hipsolver_eigmode(jobz),
+                                        convert_to_hipsolverFill(uplo), n, const_cast<float*>(A), lda,
+                                        const_cast<float*>(W), lwork, params);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -1800,7 +1839,9 @@ cusolverStatus_t cusolverDnDsyevj_bufferSize(cusolverDnHandle_t handle,
                                              int *lwork,
                                              syevjInfo_t params) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevj_bufferSize(handle, convert_hipsolver_eigmode(jobz),
+                                        convert_to_hipsolverFill(uplo), n, const_cast<double*>(A), lda,
+                                        const_cast<double*>(W), lwork, params);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -1820,7 +1861,9 @@ cusolverStatus_t cusolverDnCheevj_bufferSize(cusolverDnHandle_t handle,
                                              int *lwork,
                                              syevjInfo_t params) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevj_bufferSize(handle, convert_hipsolver_eigmode(jobz),
+                                        convert_to_hipsolverFill(uplo), n, reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)),
+                                        lda, const_cast<float*>(W), lwork, params);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -1840,7 +1883,9 @@ cusolverStatus_t cusolverDnZheevj_bufferSize(cusolverDnHandle_t handle,
                                              int *lwork,
                                              syevjInfo_t params) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevj_bufferSize(handle, convert_hipsolver_eigmode(jobz),
+                                        convert_to_hipsolverFill(uplo), n, reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)),
+                                        lda, const_cast<double*>(W), lwork, params);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -1871,7 +1916,8 @@ cusolverStatus_t cusolverDnSsyevj(cusolverDnHandle_t handle,
                            work,
                            info);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevj(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                            n, A, lda, W, work, lwork, info, params);
     #endif
 }
 
@@ -1896,7 +1942,8 @@ cusolverStatus_t cusolverDnDsyevj(cusolverDnHandle_t handle,
                            work,
                            info);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevj(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                            n, A, lda, W, work, lwork, info, params);
     #endif
 }
 
@@ -1921,7 +1968,9 @@ cusolverStatus_t cusolverDnCheevj(cusolverDnHandle_t handle,
                            reinterpret_cast<float*>(work),
                            info);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevj(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                            n, reinterpret_cast<hipFloatComplex*>(A), lda, W, reinterpret_cast<hipFloatComplex*>(work),
+                            lwork, info, params);
     #endif
 }
 
@@ -1946,7 +1995,9 @@ cusolverStatus_t cusolverDnZheevj(cusolverDnHandle_t handle,
                            reinterpret_cast<double*>(work),
                            info);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevj(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                            n, reinterpret_cast<hipDoubleComplex*>(A), lda, W, reinterpret_cast<hipDoubleComplex*>(work),
+                            lwork, info, params);
     #endif
 }
 
@@ -1962,7 +2013,8 @@ cusolverStatus_t cusolverDnSsyevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     syevjInfo_t params,
                                                     int batchSize) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevjBatched_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                                n, const_cast<float*>(A), lda, const_cast<float*>(W), lwork, params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -1983,7 +2035,8 @@ cusolverStatus_t cusolverDnDsyevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     syevjInfo_t params,
                                                     int batchSize) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevjBatched_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                                n, const_cast<double*>(A), lda, const_cast<double*>(W), lwork, params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -2004,7 +2057,9 @@ cusolverStatus_t cusolverDnCheevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     syevjInfo_t params,
                                                     int batchSize) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevjBatched_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                                n, reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)), lda,
+                                                const_cast<float*>(W), lwork, params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -2025,7 +2080,9 @@ cusolverStatus_t cusolverDnZheevjBatched_bufferSize(cusolverDnHandle_t handle,
                                                     syevjInfo_t params,
                                                     int batchSize) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevjBatched_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                                n, reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)), lda,
+                                                const_cast<double*>(W), lwork, params, batchSize);
   #else
     // rocSOLVER does not need extra workspace, but it needs to allocate memory for storing
     // the tridiagonal matrix T associated with A, which we don't need, so we use this workspace
@@ -2057,7 +2114,8 @@ cusolverStatus_t cusolverDnSsyevjBatched(cusolverDnHandle_t handle,
                                    work, n,
                                    info, batchSize);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevjBatched(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                    n, A, lda, W, work, lwork, info, params, batchSize);
     #endif
 }
 
@@ -2083,7 +2141,8 @@ cusolverStatus_t cusolverDnDsyevjBatched(cusolverDnHandle_t handle,
                                    work, n,
                                    info, batchSize);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevjBatched(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                    n, A, lda, W, work, lwork, info, params, batchSize);
     #endif
 }
 
@@ -2109,7 +2168,9 @@ cusolverStatus_t cusolverDnCheevjBatched(cusolverDnHandle_t handle,
                                    reinterpret_cast<float*>(work), n,
                                    info, batchSize);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevjBatched(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                    n, reinterpret_cast<hipFloatComplex*>(A), lda, W, reinterpret_cast<hipFloatComplex*>(work),
+                                    lwork, info, params, batchSize);
     #endif
 }
 
@@ -2135,7 +2196,9 @@ cusolverStatus_t cusolverDnZheevjBatched(cusolverDnHandle_t handle,
                                    reinterpret_cast<double*>(work), n,
                                    info, batchSize);
     #else
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevjBatched(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo),
+                                    n, reinterpret_cast<hipDoubleComplex*>(A), lda, W, reinterpret_cast<hipDoubleComplex*>(work),
+                                    lwork, info, params, batchSize);
     #endif
 }
 
