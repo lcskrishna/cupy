@@ -2206,6 +2206,11 @@ cusolverStatus_t cusolverDnZheevjBatched(cusolverDnHandle_t handle,
 /* all of the stubs below are unsupported functions; the supported ones are moved to above */
 
 typedef enum{} cusolverEigType_t;
+#if HIP_VERSION >= 540
+static hipsolverEigType_t convert_hipsolver_eigtype(cusolverEigType_t type) {
+    return static_cast<hipsolverEigType_t>(static_cast<int>(type) + 211);
+}
+#endif
 typedef void* cusolverSpHandle_t;
 typedef void* cusparseMatDescr_t;
 
@@ -2227,65 +2232,145 @@ cusolverStatus_t cusolverSpSetStream(...) {
 
 
 /* ---------- potrs ---------- */
-cusolverStatus_t cusolverDnSpotrs(...) {
+cusolverStatus_t cusolverDnSpotrs(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           int nrhs,
+           const float *A,
+           int lda,
+           float *B,
+           int ldb,
+           int *devInfo) {
   #if HIP_VERSION >= 540
+    return hipsolverSpotrs(handle, convert_to_hipsolverFill(uplo), n, nrhs,
+                            const_cast<float*>(A), lda, B, ldb, nullptr, 0, devInfo);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnDpotrs(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           int nrhs,
+           const double *A,
+           int lda,
+           double *B,
+           int ldb,
+           int *devInfo) {
+  #if HIP_VERSION >= 540
+    return hipsolverDpotrs(handle, convert_to_hipsolverFill(uplo), n, nrhs,
+                            const_cast<double*>(A), lda, B, ldb, nullptr, 0, devInfo);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnCpotrs(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           int nrhs,
+           const cuComplex *A,
+           int lda,
+           cuComplex *B,
+           int ldb,
+           int *devInfo) {
+  #if HIP_VERSION >= 540
+    return hipsolverCpotrs(handle, convert_to_hipsolverFill(uplo), n, nrhs,
+                            reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)), lda,
+                            reinterpret_cast<hipFloatComplex*>(B), ldb, nullptr, 0, devInfo);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnZpotrs(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           int nrhs,
+           const cuDoubleComplex *A,
+           int lda,
+           cuDoubleComplex *B,
+           int ldb,
+           int *devInfo) {
+  #if HIP_VERSION >= 540
+    return hipsolverZpotrs(handle, convert_to_hipsolverFill(uplo), n, nrhs,
+                            reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)), lda,
+                            reinterpret_cast<hipDoubleComplex*>(B), ldb, nullptr, 0, devInfo);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnSpotrsBatched(
+    cusolverDnHandle_t handle,
+    cublasFillMode_t uplo,
+    int n,
+    int nrhs,
+    float *Aarray[],
+    int lda,
+    float *Barray[],
+    int ldb,
+    int *info,
+    int batchSize) {
+  #if HIP_VERSION >= 540
+    return hipsolverSpotrsBatched(handle, convert_to_hipsolverFill(uplo), n, nrhs, Aarray, lda,
+                                    Barray, ldb, nullptr, 0, info, batchSize);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnDpotrsBatched(cusolverDnHandle_t handle,
+    cublasFillMode_t uplo,
+    int n,
+    int nrhs,
+    double *Aarray[],
+    int lda,
+    double *Barray[],
+    int ldb,
+    int *info,
+    int batchSize) {
+  #if HIP_VERSION >= 540
+    return hipsolverDpotrsBatched(handle, convert_to_hipsolverFill(uplo), n, nrhs, Aarray, lda,
+                                    Barray, ldb, nullptr, 0, info, batchSize);
+  #else
+    return rocblas_status_not_implemented;
+  #endif
+}
+
+cusolverStatus_t cusolverDnCpotrsBatched(cusolverDnHandle_t handle,
+    cublasFillMode_t uplo,
+    int n,
+    int nrhs,
+    cuComplex *Aarray[],
+    int lda,
+    cuComplex *Barray[],
+    int ldb,
+    int *info,
+    int batchSize) {
+  #if HIP_VERSION >= 540
+    return hipsolverCpotrsBatched(handle, convert_to_hipsolverFill(uplo), n, nrhs, reinterpret_cast<hipFloatComplex**>(Aarray), lda,
+                                    reinterpret_cast<hipFloatComplex**>(Barray), ldb, nullptr, 0, info, batchSize);
     return HIPSOLVER_STATUS_NOT_SUPPORTED;
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnDpotrs(...) {
+cusolverStatus_t cusolverDnZpotrsBatched(cusolverDnHandle_t handle,
+    cublasFillMode_t uplo,
+    int n,
+    int nrhs,
+    cuDoubleComplex *Aarray[],
+    int lda,
+    cuDoubleComplex *Barray[],
+    int ldb,
+    int *info,
+    int batchSize) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnCpotrs(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnZpotrs(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnSpotrsBatched(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnDpotrsBatched(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnCpotrsBatched(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
-  #else
-    return rocblas_status_not_implemented;
-  #endif
-}
-
-cusolverStatus_t cusolverDnZpotrsBatched(...) {
-  #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZpotrsBatched(handle, convert_to_hipsolverFill(uplo), n, nrhs, reinterpret_cast<hipDoubleComplex**>(Aarray), lda,
+                                    reinterpret_cast<hipDoubleComplex**>(Barray), ldb, nullptr, 0, info, batchSize);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2293,65 +2378,115 @@ cusolverStatus_t cusolverDnZpotrsBatched(...) {
 
 
 /* ---------- sytrf ---------- */
-cusolverStatus_t cusolverDnSsytrf_bufferSize(...) {
+cusolverStatus_t cusolverDnSsytrf_bufferSize(cusolverDnHandle_t handle,
+                      int n,
+                      float *A,
+                      int lda,
+                      int *Lwork ) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsytrf_bufferSize(handle, n, A, lda, Lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnDsytrf_bufferSize(...) {
+cusolverStatus_t cusolverDnDsytrf_bufferSize(cusolverDnHandle_t handle,
+                      int n,
+                      double *A,
+                      int lda,
+                      int *Lwork ) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsytrf_bufferSize(handle, n, A, lda, Lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnCsytrf_bufferSize(...) {
+cusolverStatus_t cusolverDnCsytrf_bufferSize(cusolverDnHandle_t handle,
+                      int n,
+                      cuComplex *A,
+                      int lda,
+                      int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCsytrf_bufferSize(handle, n, reinterpret_cast<hipFloatComplex*>(A), lda, Lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnZsytrf_bufferSize(...) {
+cusolverStatus_t cusolverDnZsytrf_bufferSize(cusolverDnHandle_t handle,
+                      int n,
+                      cuDoubleComplex *A,
+                      int lda,
+                      int *Lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZsytrf_bufferSize(handle, n, reinterpret_cast<hipDoubleComplex*>(A), lda, Lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnSsytrf(...) {
+cusolverStatus_t cusolverDnSsytrf(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           float *A,
+           int lda,
+           int *ipiv,
+           float *work,
+           int lwork,
+           int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsytrf(handle, convert_to_hipsolverFill(uplo), n, A, lda, ipiv, work, lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnDsytrf(...) {
+cusolverStatus_t cusolverDnDsytrf(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           double *A,
+           int lda,
+           int *ipiv,
+           double *work,
+           int lwork,
+           int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsytrf(handle, convert_to_hipsolverFill(uplo), n, A, lda, ipiv, work, lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnCsytrf(...) {
+cusolverStatus_t cusolverDnCsytrf(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           cuComplex *A,
+           int lda,
+           int *ipiv,
+           cuComplex *work,
+           int lwork,
+           int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCsytrf(handle, convert_to_hipsolverFill(uplo), n, reinterpret_cast<hipFloatComplex*>(A), lda,
+                            ipiv, reinterpret_cast<hipFloatComplex*>(work), lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnZsytrf(...) {
+cusolverStatus_t cusolverDnZsytrf(cusolverDnHandle_t handle,
+           cublasFillMode_t uplo,
+           int n,
+           cuDoubleComplex *A,
+           int lda,
+           int *ipiv,
+           cuDoubleComplex *work,
+           int lwork,
+           int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZsytrf(handle, convert_to_hipsolverFill(uplo), n, reinterpret_cast<hipDoubleComplex*>(A), lda,
+                            ipiv, reinterpret_cast<hipDoubleComplex*>(work), lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2526,9 +2661,22 @@ cusolverStatus_t cusolverDnZgesvdaStridedBatched(...) {
   #endif
 }
 
-cusolverStatus_t cusolverDnZZgels_bufferSize(...) {
+cusolverStatus_t cusolverDnZZgels_bufferSize(cusolverDnHandle_t handle,
+    int m,
+    int n,
+    int nrhs,
+    cuDoubleComplex* dA,
+    int ldda,
+    cuDoubleComplex* dB,
+    int lddb,
+    cuDoubleComplex* dX,
+    int lddx,
+    void* dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZZgels_bufferSize(handle, m, n, nrhs, reinterpret_cast<hipDoubleComplex*>(dA), ldda,
+            reinterpret_cast<hipDoubleComplex*>(dB), lddb, reinterpret_cast<hipDoubleComplex*>(dX), lddx,
+            lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2554,9 +2702,21 @@ cusolverStatus_t cusolverDnZKgels_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnCCgels_bufferSize(...) {
+cusolverStatus_t cusolverDnCCgels_bufferSize(cusolverDnHandle_t handle,
+    int m,
+    int n,
+    int nrhs,
+    cuComplex* dA,
+    int ldda,
+    cuComplex* dB,
+    int lddb,
+    cuComplex * dX,
+    int lddx,
+    void* dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCCgels_bufferSize(handle, m, n, nrhs, reinterpret_cast<hipFloatComplex*>(dA), ldda,
+                                        reinterpret_cast<hipFloatComplex*>(dB), lddb, reinterpret_cast<hipFloatComplex*>(dX), lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2575,9 +2735,20 @@ cusolverStatus_t cusolverDnCKgels_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnDDgels_bufferSize(...) {
+cusolverStatus_t cusolverDnDDgels_bufferSize(cusolverDnHandle_t handle,
+    int m,
+    int n,
+    int nrhs,
+    double* dA,
+    int ldda,
+    double* dB,
+    int lddb,
+    double* dX,
+    int lddx,
+    void* dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDDgels_bufferSize(handle, m, n, nrhs, dA, ldda, dB, lddb, dX, lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2603,9 +2774,20 @@ cusolverStatus_t cusolverDnDHgels_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnSSgels_bufferSize(...) {
+cusolverStatus_t cusolverDnSSgels_bufferSize(cusolverDnHandle_t handle,
+    int m,
+    int n,
+    int nrhs,
+    float* dA,
+    int ldda,
+    float* dB,
+    int lddb,
+    float* dX,
+    int lddx,
+    void* dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSSgels_bufferSize(handle, m, n, nrhs, dA, ldda, dB, lddb, dX, lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2624,9 +2806,24 @@ cusolverStatus_t cusolverDnSHgels_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnZZgels(...) {
+cusolverStatus_t cusolverDnZZgels(cusolverDnHandle_t handle,
+        int m,
+        int n,
+        int nrhs,
+        cuDoubleComplex* dA,
+        int ldda,
+        cuDoubleComplex* dB,
+        int lddb,
+        cuDoubleComplex* dX,
+        int lddx,
+        void* dWorkspace,
+        size_t lwork_bytes,
+        int* niter,
+        int* dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZZgels(handle, m, n, nrhs, reinterpret_cast<hipDoubleComplex*>(dA), ldda,
+                            reinterpret_cast<hipDoubleComplex*>(dB), lddb, reinterpret_cast<hipDoubleComplex*>(dX), lddx,
+                            dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2652,9 +2849,24 @@ cusolverStatus_t cusolverDnZKgels(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnCCgels(...) {
+cusolverStatus_t cusolverDnCCgels(cusolverDnHandle_t handle,
+        int m,
+        int n,
+        int nrhs,
+        cuComplex* dA,
+        int ldda,
+        cuComplex* dB,
+        int lddb,
+        cuComplex* dX,
+        int lddx,
+        void* dWorkspace,
+        size_t lwork_bytes,
+        int* niter,
+        int* dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCCgels(handle, m, n, nrhs, reinterpret_cast<hipFloatComplex*>(dA), ldda,
+                            reinterpret_cast<hipFloatComplex*>(dB), lddb, reinterpret_cast<hipFloatComplex*>(dX), lddx,
+                            dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2673,9 +2885,22 @@ cusolverStatus_t cusolverDnCKgels(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnDDgels(...) {
+cusolverStatus_t cusolverDnDDgels(cusolverDnHandle_t handle,
+        int m,
+        int n,
+        int nrhs,
+        double* dA,
+        int ldda,
+        double* dB,
+        int lddb,
+        double* dX,
+        int lddx,
+        void* dWorkspace,
+        size_t lwork_bytes,
+        int* niter,
+        int* dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDDgels(handle, m, n, nrhs, dA, ldda, dB, lddb, dX, lddx, dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2701,9 +2926,22 @@ cusolverStatus_t cusolverDnDHgels(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnSSgels(...) {
+cusolverStatus_t cusolverDnSSgels(cusolverDnHandle_t handle,
+        int m,
+        int n,
+        int nrhs,
+        float* dA,
+        int ldda,
+        float* dB,
+        int lddb,
+        float* dX,
+        int lddx,
+        void * dWorkspace,
+        size_t lwork_bytes,
+        int * niter,
+        int * dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSSgels(handle, m, n, nrhs, dA, ldda, dB, lddb, dX, lddx, dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2723,113 +2961,209 @@ cusolverStatus_t cusolverDnSHgels(...) {
   #endif
 }
 
-cusolverStatus_t cusolverDnSsyevd_bufferSize(...) {
+cusolverStatus_t cusolverDnSsyevd_bufferSize(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    const float *A,
+    int lda,
+    const float *W,
+    int *lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevd_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                                        const_cast<float*>(A), lda, const_cast<float*>(W), lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnDsyevd_bufferSize(...) {
+cusolverStatus_t cusolverDnDsyevd_bufferSize(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    const double *A,
+    int lda,
+    const double *W,
+    int *lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevd_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                                        const_cast<double*>(A), lda, const_cast<double*>(W), lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnCheevd_bufferSize(...) {
+cusolverStatus_t cusolverDnCheevd_bufferSize(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    const cuComplex *A,
+    int lda,
+    const float *W,
+    int *lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevd_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                                        reinterpret_cast<hipFloatComplex*>(const_cast<cuComplex*>(A)), lda,
+                                        const_cast<float*>(W), lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnZheevd_bufferSize(...) {
+cusolverStatus_t cusolverDnZheevd_bufferSize(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    const cuDoubleComplex *A,
+    int lda,
+    const double *W,
+    int *lwork) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevd_bufferSize(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                                        reinterpret_cast<hipDoubleComplex*>(const_cast<cuDoubleComplex*>(A)), lda,
+                                        const_cast<double*>(W), lwork);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnSsyevd(...) {
+cusolverStatus_t cusolverDnSsyevd(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    float *A,
+    int lda,
+    float *W,
+    float *work,
+    int lwork,
+    int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSsyevd(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n, A, lda,
+                            W, work, lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnDsyevd(...) {
+cusolverStatus_t cusolverDnDsyevd(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    double *A,
+    int lda,
+    double *W,
+    double *work,
+    int lwork,
+    int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDsyevd(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n, A, lda,
+                            W, work, lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnCheevd(...) {
+cusolverStatus_t cusolverDnCheevd(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    cuComplex *A,
+    int lda,
+    float *W,
+    cuComplex *work,
+    int lwork,
+    int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCheevd(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                            reinterpret_cast<hipFloatComplex*>(A), lda, W,
+                            reinterpret_cast<hipFloatComplex*>(work), lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnZheevd(...) {
+cusolverStatus_t cusolverDnZheevd(cusolverDnHandle_t handle,
+    cusolverEigMode_t jobz,
+    cublasFillMode_t uplo,
+    int n,
+    cuDoubleComplex *A,
+    int lda,
+    double *W,
+    cuDoubleComplex *work,
+    int lwork,
+    int *devInfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZheevd(handle, convert_hipsolver_eigmode(jobz), convert_to_hipsolverFill(uplo), n,
+                            reinterpret_cast<hipDoubleComplex*>(A), lda, W,
+                            reinterpret_cast<hipDoubleComplex*>(work), lwork, devInfo);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnXsyevjSetTolerance(...) {
+cusolverStatus_t cusolverDnXsyevjSetTolerance(syevjInfo_t info,
+    double tolerance) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverXsyevjSetTolerance(info, tolerance);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnXsyevjSetMaxSweeps(...) {
+cusolverStatus_t cusolverDnXsyevjSetMaxSweeps(syevjInfo_t info,
+    int max_sweeps) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverXsyevjSetMaxSweeps(info, max_sweeps);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnXsyevjSetSortEig(...) {
+cusolverStatus_t cusolverDnXsyevjSetSortEig(syevjInfo_t info,
+    int sort_eig) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverXsyevjSetSortEig(info, sort_eig);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnXsyevjGetResidual(...) {
+cusolverStatus_t cusolverDnXsyevjGetResidual(cusolverDnHandle_t handle,
+    syevjInfo_t info,
+    double *residual) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverXsyevjGetResidual(handle, info, residual);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnXsyevjGetSweeps(...) {
+cusolverStatus_t cusolverDnXsyevjGetSweeps(cusolverDnHandle_t handle,
+    syevjInfo_t info,
+    int *executed_sweeps) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverXsyevjGetSweeps(handle, info, executed_sweeps);
   #else
     return rocblas_status_not_implemented;
   #endif
 }
 
-cusolverStatus_t cusolverDnZZgesv_bufferSize(...) {
+cusolverStatus_t cusolverDnZZgesv_bufferSize(cusolverDnHandle_t handle,
+    int n,
+    int nrhs,
+    cuDoubleComplex* dA,
+    int ldda,
+    int* dipiv,
+    cuDoubleComplex* dB,
+    int lddb,
+    cuDoubleComplex* dX,
+    int lddx,
+    void * dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZZgesv_bufferSize(handle, n, nrhs, reinterpret_cast<hipDoubleComplex*>(dA), ldda, dipiv,
+                                        reinterpret_cast<hipDoubleComplex*>(dB), lddb, reinterpret_cast<hipDoubleComplex*>(dX), lddx,
+                                        lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2855,9 +3189,22 @@ cusolverStatus_t cusolverDnZKgesv_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnCCgesv_bufferSize(...) {
+cusolverStatus_t cusolverDnCCgesv_bufferSize(cusolverDnHandle_t handle,
+    int n,
+    int nrhs,
+    cuComplex* dA,
+    int ldda,
+    int * dipiv,
+    cuComplex* dB,
+    int lddb,
+    cuComplex* dX,
+    int lddx,
+    void* dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCCgesv_bufferSize(handle, n, nrhs, reinterpret_cast<hipFloatComplex*>(dA), ldda,
+                                        dipiv, reinterpret_cast<hipFloatComplex*>(dB), lddb,
+                                        reinterpret_cast<hipFloatComplex*>(dX), lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2876,9 +3223,20 @@ cusolverStatus_t cusolverDnCKgesv_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnDDgesv_bufferSize(...) {
+cusolverStatus_t cusolverDnDDgesv_bufferSize(cusolverDnHandle_t handle,
+    int n,
+    int nrhs,
+    double* dA,
+    int     ldda,
+    int   * dipiv,
+    double* dB,
+    int     lddb,
+    double* dX,
+    int     lddx,
+    void  * dwork,
+    size_t* lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDDgesv_bufferSize(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX, lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2904,9 +3262,20 @@ cusolverStatus_t cusolverDnDHgesv_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnSSgesv_bufferSize(...) {
+cusolverStatus_t cusolverDnSSgesv_bufferSize(cusolverDnHandle_t handle,
+    int n,
+    int nrhs,
+    float* dA,
+    int    ldda,
+    int  * dipiv,
+    float* dB,
+    int    lddb,
+    float* dX,
+    int    lddx,
+    void * dwork,
+    size_t * lwork_bytes) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSSgesv_bufferSize(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX, lddx, lwork_bytes);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2925,9 +3294,24 @@ cusolverStatus_t cusolverDnSHgesv_bufferSize(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnZZgesv(...) {
+cusolverStatus_t cusolverDnZZgesv(cusolverDnHandle_t handle,
+        int n,
+        int nrhs,
+        cuDoubleComplex*   dA,
+        int                ldda,
+        int            *   dipiv,
+        cuDoubleComplex*   dB,
+        int                lddb,
+        cuDoubleComplex*   dX,
+        int                lddx,
+        void           *   dWorkspace,
+        size_t             lwork_bytes,
+        int            *   niter,
+        int            *   dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverZZgesv(handle, n, nrhs, reinterpret_cast<hipDoubleComplex*>(dA), ldda, dipiv,
+                            reinterpret_cast<hipDoubleComplex*>(dB), lddb, reinterpret_cast<hipDoubleComplex*>(dX), lddx,
+                            dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2953,9 +3337,24 @@ cusolverStatus_t cusolverDnZKgesv(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnCCgesv(...) {
+cusolverStatus_t cusolverDnCCgesv(cusolverDnHandle_t handle,
+        int n,
+        int nrhs,
+        cuComplex*   dA,
+        int          ldda,
+        int      *   dipiv,
+        cuComplex*   dB,
+        int          lddb,
+        cuComplex*   dX,
+        int          lddx,
+        void     *   dWorkspace,
+        size_t       lwork_bytes,
+        int      *   niter,
+        int      *   dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverCCgesv(handle, n, nrhs, reinterpret_cast<hipFloatComplex*>(dA), ldda, dipiv,
+                            reinterpret_cast<hipFloatComplex*>(dB), lddb, reinterpret_cast<hipFloatComplex*>(dX), lddx,
+                            dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -2974,9 +3373,22 @@ cusolverStatus_t cusolverDnCKgesv(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnDDgesv(...) {
+cusolverStatus_t cusolverDnDDgesv(cusolverDnHandle_t handle,
+        int  n,
+        int  nrhs,
+        double*   dA,
+        int       ldda,
+        int   *   dipiv,
+        double*   dB,
+        int       lddb,
+        double*   dX,
+        int       lddx,
+        void  *   dWorkspace,
+        size_t    lwork_bytes,
+        int   *   niter,
+        int   *   dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverDDgesv(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX, lddx, dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
@@ -3002,9 +3414,22 @@ cusolverStatus_t cusolverDnDHgesv(...) {
     return rocblas_status_not_implemented;
   #endif
 }
-cusolverStatus_t cusolverDnSSgesv(...) {
+cusolverStatus_t cusolverDnSSgesv(cusolverDnHandle_t handle,
+        int n,
+        int nrhs,
+        float * dA,
+        int     ldda,
+        int   * dipiv,
+        float * dB,
+        int     lddb,
+        float * dX,
+        int     lddx,
+        void  * dWorkspace,
+        size_t  lwork_bytes,
+        int   * niter,
+        int   * dinfo) {
   #if HIP_VERSION >= 540
-    return HIPSOLVER_STATUS_NOT_SUPPORTED;
+    return hipsolverSSgesv(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX, lddx, dWorkspace, lwork_bytes, niter, dinfo);
   #else
     return rocblas_status_not_implemented;
   #endif
