@@ -42,7 +42,6 @@ def _conditional_scipy_version_skip(mode, order):
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestMapCoordinates:
 
     _multiprocess_can_split = True
@@ -125,7 +124,6 @@ class TestMapCoordinates:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestMapCoordinatesHalfInteger:
 
     def _map_coordinates(self, xp, scp, a, coordinates):
@@ -155,7 +153,6 @@ class TestMapCoordinatesHalfInteger:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestAffineTransform:
 
     _multiprocess_can_split = True
@@ -241,7 +238,6 @@ class TestAffineTransform:
 
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestAffineExceptions:
 
     def test_invalid_affine_ndim(self):
@@ -330,7 +326,6 @@ class TestAffineExceptions:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestAffineTransformTextureMemory:
 
     _multiprocess_can_split = True
@@ -417,7 +412,6 @@ class TestAffineTransformTextureMemory:
 
 @testing.gpu
 @testing.with_requires('opencv-python')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestAffineTransformOpenCV:
 
     _multiprocess_can_split = True
@@ -459,7 +453,6 @@ class TestAffineTransformOpenCV:
 ))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestRotate:
 
     _multiprocess_can_split = True
@@ -538,7 +531,6 @@ class TestRotate:
 @testing.gpu
 # Scipy older than 1.3.0 raises IndexError instead of ValueError
 @testing.with_requires('scipy>=1.3.0')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestRotateExceptions:
 
     def test_rotate_invalid_plane(self):
@@ -560,7 +552,6 @@ class TestRotateExceptions:
 )
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestRotateAxes:
 
     _multiprocess_can_split = True
@@ -575,7 +566,6 @@ class TestRotateAxes:
 
 @testing.gpu
 @testing.with_requires('opencv-python')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestRotateOpenCV:
 
     _multiprocess_can_split = True
@@ -611,7 +601,6 @@ class TestRotateOpenCV:
 ))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestShift:
 
     _multiprocess_can_split = True
@@ -692,7 +681,6 @@ class TestShift:
     'cval': [cupy.nan, cupy.inf, -cupy.inf],
 }))
 @testing.gpu
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestInterpolationInvalidCval:
 
     def _prep_output(self, a):
@@ -772,7 +760,6 @@ class TestInterpolationInvalidCval:
 
 @testing.gpu
 @testing.with_requires('opencv-python')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestShiftOpenCV:
 
     _multiprocess_can_split = True
@@ -800,7 +787,6 @@ class TestShiftOpenCV:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestZoom:
 
     _multiprocess_can_split = True
@@ -864,7 +850,6 @@ class TestZoom:
     'mode': ['nearest', 'reflect', 'mirror', 'grid-wrap', 'grid-constant'],
 }))
 @testing.gpu
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestZoomOrder0IntegerGrid():
 
     def test_zoom_grid_by_int_order0(self):
@@ -889,7 +874,6 @@ class TestZoomOrder0IntegerGrid():
     'grid_mode': [False, True],
 }))
 @testing.gpu
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestZoomOutputSize1():
 
     @testing.for_float_dtypes(no_float16=True)
@@ -908,7 +892,6 @@ class TestZoomOutputSize1():
 )
 @testing.gpu
 @testing.with_requires('opencv-python')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestZoomOpenCV:
 
     _multiprocess_can_split = True
@@ -947,7 +930,6 @@ class TestZoomOpenCV:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestSplineFilter1d:
     @testing.numpy_cupy_allclose(atol=1e-5, rtol=1e-5, scipy_name='scp')
     def test_spline_filter1d(self, xp, scp):
@@ -973,7 +955,6 @@ class TestSplineFilter1d:
 # See #5537
 @testing.slow
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestSplineFilter1dLargeArray:
 
     @pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
@@ -1000,7 +981,6 @@ class TestSplineFilter1dLargeArray:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestSplineFilter:
     @testing.numpy_cupy_allclose(atol=1e-4, rtol=1e-4, scipy_name='scp')
     def test_spline_filter(self, xp, scp):
@@ -1041,7 +1021,6 @@ class TestSplineFilter:
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestSplineFilterComplex:
 
     @testing.with_requires('scipy>=1.6')

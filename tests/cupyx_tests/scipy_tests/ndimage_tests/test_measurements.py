@@ -46,7 +46,6 @@ def _generate_binary_structure(rank, connectivity):
 }))
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestLabel:
 
     @testing.numpy_cupy_array_equal(scipy_name='scp')
@@ -72,7 +71,6 @@ class TestLabel:
 
 @testing.gpu
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestLabelSpecialCases:
 
     @testing.numpy_cupy_array_equal(scipy_name='scp')
@@ -118,7 +116,6 @@ class TestLabelSpecialCases:
     'op': stats_ops,
 }))
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestStats:
 
     def _make_image(self, shape, xp, dtype):
@@ -301,7 +298,6 @@ class TestStats:
     'enable_cub': [True, False],
 }))
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestMeasurementsSelect:
 
     @pytest.fixture(autouse=True)
@@ -380,7 +376,6 @@ class TestMeasurementsSelect:
     'shape': [(200,), (16, 20)],
 }))
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestHistogram():
 
     def _make_image(self, shape, xp, dtype, scale):
@@ -423,7 +418,6 @@ class TestHistogram():
     'pass_positions': [True, False],
 }))
 @testing.with_requires('scipy')
-@pytest.mark.skipif(runtime.is_hip, reason='ROCm/HIP may have a bug')
 class TestLabeledComprehension():
 
     def _make_image(self, shape, xp, dtype, scale):
