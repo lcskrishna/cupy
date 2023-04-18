@@ -7,7 +7,6 @@ from cupy import testing
 import cupyx.scipy.fft  # NOQA
 import cupyx.scipy.fftpack  # NOQA
 import cupyx.scipy.ndimage  # NOQA
-from cupy.cuda import runtime
 
 try:
     # scipy.fft only available since SciPy 1.4.0
