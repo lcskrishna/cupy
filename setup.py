@@ -10,6 +10,7 @@ sys.path.append(os.path.join(source_root, 'install'))
 
 import cupy_builder  # NOQA
 from cupy_builder import cupy_setup_build  # NOQA
+from cupy_builder.install_utils import get_rocm_version
 
 ctx = cupy_builder.Context(source_root)
 cupy_builder.initialize(ctx)
@@ -51,6 +52,25 @@ extras_require = {
 }
 tests_require = extras_require['test']
 
+# hipify cupy
+if get_rocm_version() > 0:
+    # run hipify.
+    from hipify_torch import hipify_python
+    proj_dir = os.path.join(source_root, "cupy_backends", "cuda")
+    print("INFO: hipification of cupy_backends in progress ...")
+    with hipify_python.GeneratedFileCleaner(keep_intermediates=True) as \
+            clean_ctx:
+        hipify_python.hipify(
+            project_directory=proj_dir,
+            output_directory=proj_dir,
+            includes=['*'],
+            extra_extensions=(".pyx", ".pxd"),
+            show_detailed=True,
+            header_include_dirs=[],
+            custom_map_list="install/amd_build/rocm_custom_mapping.json",
+            is_pytorch_extension=True,
+            clean_ctx=clean_ctx,
+        )
 
 # List of files that needs to be in the distribution (sdist/wheel).
 # Notes:

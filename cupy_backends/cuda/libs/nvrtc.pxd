@@ -15,24 +15,24 @@ ELSE:
     ctypedef int Result
     ctypedef void* Program
 
+IF CUPY_CUDA_VERSION != 0:
+    cpdef check_status(int status)
 
-cpdef check_status(int status)
-
-cpdef tuple getVersion()
-cpdef tuple getSupportedArchs()
+    cpdef tuple getVersion()
+    cpdef tuple getSupportedArchs()
 
 
-###############################################################################
-# Program
-###############################################################################
+    ###############################################################################
+    # Program
+    ###############################################################################
 
-cpdef intptr_t createProgram(unicode src, unicode name, headers,
-                             include_names) except? 0
-cpdef destroyProgram(intptr_t prog)
-cpdef compileProgram(intptr_t prog, options)
-cpdef bytes getPTX(intptr_t prog)
-cpdef bytes getCUBIN(intptr_t prog)
-cpdef bytes getNVVM(intptr_t prog)
-cpdef unicode getProgramLog(intptr_t prog)
-cpdef addNameExpression(intptr_t prog, str name)
-cpdef str getLoweredName(intptr_t prog, str name)
+    cpdef intptr_t createProgram(unicode src, unicode name, headers,
+                                 include_names) except? 0
+    cpdef destroyProgram(intptr_t prog)
+    cpdef compileProgram(intptr_t prog, options)
+    cpdef bytes getPTX(intptr_t prog)
+    cpdef bytes getCUBIN(intptr_t prog)
+    cpdef bytes getNVVM(intptr_t prog)
+    cpdef unicode getProgramLog(intptr_t prog)
+    cpdef addNameExpression(intptr_t prog, str name)
+    cpdef str getLoweredName(intptr_t prog, str name)
