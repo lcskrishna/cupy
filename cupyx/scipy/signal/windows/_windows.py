@@ -233,7 +233,7 @@ _triang_kernel = cupy.ElementwiseKernel(
     "_triang_kernel",
     options=("-std=c++11",),
     loop_prep="const int m { static_cast<int>( 0.5 * _ind.size() ) }; \
-               const bool odd { _ind.size() & 1 };",
+               const bool odd = static_cast<bool>( _ind.size() & 1 );",
 )
 
 
@@ -332,7 +332,7 @@ _parzen_kernel = cupy.ElementwiseKernel(
     options=("-std=c++11",),
     loop_prep="const double start { 0.5 * -( _ind.size () - 1 ) }; \
                const double den { 1.0 / ( 0.5 * _ind.size () ) }; \
-               const bool odd { _ind.size() & 1 }; \
+               const bool odd = static_cast<bool>( _ind.size() & 1 ); \
                double s1 { floor(-0.25 * ( _ind.size () - 1 ) ) }; \
                double s2 { floor(0.25 * ( _ind.size () - 1 ) ) };",
 )
@@ -1606,7 +1606,7 @@ _chebwin_kernel = cupy.ElementwiseKernel(
     "_chebwin_kernel",
     options=("-std=c++11",),
     loop_prep="const double N { M_PI * ( 1.0 / _ind.size() ) }; \
-               const bool odd { _ind.size() & 1 };",
+               const bool odd = static_cast<bool>( _ind.size() & 1 );",
 )
 
 

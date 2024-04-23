@@ -85,7 +85,7 @@ def parse_test_log_and_get_summary(test_name):
         line = lines[j].rstrip()
         if ("collecting ..." in line):
             count = line.split("collected")[1].split("items")[0].strip()
-        if ("==" in line):
+        if (("==" in line) and "in" in line and "s" in line):
             summary = re.split(pattern, line)[1].split("=")[0]
     test_data = test_name + "|" + count + "|" + summary
     return test_data
